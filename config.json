@@ -1,0 +1,26 @@
+{
+  "SpreadEntry": 0.0030,
+  "SpreadExit": -0.0040,
+  "MaxLength": 5184000, 
+  "GapSec": 5,
+
+  "UseFullCash": false,
+  "UntouchedCash": 0.01, 
+  "CashForTesting": 5.00,
+  
+  "DebugMaxIteration": 3200000,
+  "Verbose": true,
+  
+  "SendEmail": false,
+  "SenderAddress": "john@example.com",
+  "SenderUsername": "john",
+  "SenderPassword": "pa33w0rd",
+  "SmtpServerAddress": "smtp.example.com:587",
+  "ReceiverAddress": "mark@example.com",
+
+  "BitfinexApiHead": "X-BFX-APIKEY:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "BitfinexKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+
+  "OkCoinApiKey": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+  "OkCoinSecretKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+}
