@@ -139,6 +139,7 @@ Blackbird can send you an automatic e-mail every time an arbitrage trade is done
 "SenderPassword": "pa33w0rd",
 "SmtpServerAddress": "smtp.example.com:587",
 "ReceiverAddress": "mark@example.com"
+```
 
 This feature is optional. If you let `SendEmail` to `false` you don't need to fill the other e-mail parameters.
 
