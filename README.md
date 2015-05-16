@@ -187,4 +187,4 @@ Please check the <a href="https://github.com/butor/blackbird/issues" target="_bl
 
 ### License
 
-* MIT
+MIT
