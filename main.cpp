@@ -130,10 +130,6 @@ int main(int argc, char **argv) {
     timeinfo = localtime(&rawtime);
   }
 
-  // cut to debug
-  // std::cout << "Debug: exit before main loop.\n" << std::endl;
-  // return 0;
-
   // MAIN LOOP
   if (!params.verbose) {
     std::cout << "Running..." << std::endl;  
