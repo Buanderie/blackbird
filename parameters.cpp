@@ -9,7 +9,7 @@ Parameters::Parameters(json_t *root) {
   // strategy and global parameters  
   spreadEntry = json_real_value(json_object_get(root, "SpreadEntry"));
   spreadExit = json_real_value(json_object_get(root, "SpreadExit"));
-  maxLenght = json_integer_value(json_object_get(root, "MaxLenght"));
+  maxLength = json_integer_value(json_object_get(root, "MaxLength"));
   verbose = json_boolean_value(json_object_get(root, "Verbose"));
 
   // exchanges credentials
