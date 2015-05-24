@@ -72,7 +72,7 @@ bool checkExit(Bitcoin *btcLong, Bitcoin *btcShort, Result &res, Parameters para
   }
   
   // check length
-  if (period - res.entryTime >= params.maxLenght) {
+  if (period - res.entryTime >= params.maxLength) {
     res.priceLongOut  = priceLong;
     res.priceShortOut = priceShort;
     return true;
