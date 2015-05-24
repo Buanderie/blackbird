@@ -19,7 +19,7 @@ struct Parameters {
   // strategy parameters
   double spreadEntry;
   double spreadExit;
-  unsigned maxLenght;
+  unsigned maxLength;
   
   // verbose or non-verbose mode
   bool verbose;
