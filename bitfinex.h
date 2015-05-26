@@ -5,7 +5,7 @@
 #include <string>
 #include "parameters.h"
 
-// get the current availility for usd or btc
+// get the current availability for usd or btc
 double getBitfinexAvail(CURL* curl, Parameters params, std::string currency);
 
 // send order to the exchange
