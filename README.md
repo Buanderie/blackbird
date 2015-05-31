@@ -198,7 +198,7 @@ Please check the <a href="https://github.com/butor/blackbird/issues" target="_bl
 
 * First release
 
-#### v0.0.2 - May 30th, 2015
+##### v0.0.2 - May 30th, 2015
 
  * Bitstamp exchange added
  * Kraken exchange added (bid/ask information only, other functions to be implemented)
