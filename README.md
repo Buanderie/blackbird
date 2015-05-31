@@ -20,42 +20,56 @@ __USE THE SOFTWARE AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR YOUR OWN MONEY. PAS
 
 ### Live Results
 
-As of today I get a 2% monthly return in average. The system generates 8 trades per month on average and doesn't have any single losing trade thanks to the arbitrage mechanism. The trades usually last between 20 minutes and 7 days. The trade lengths are very variable since the system _always_ wait for the spread to close. This can take minutes or days but that is the reason why we don't get any losing trades. There is a control parameter named `MaxLength` that will automatically close a trade after 60 days. This parameter can be adapted if needed.
+As of today the program gets a 2% monthly return in average. It generates 8 trades per month on average and doesn't have any single losing trade thanks to the arbitrage mechanism. The trades usually last between 20 minutes and 7 days. The trade lengths are very variable since the system _always_ wait for the spread to close. This can take minutes or days but that is the reason why it doesn't get any losing trades. There is a control parameter named `MaxLength` that will automatically close a trade after 60 days. This parameter can be adapted or removed if needed.
 
 ### Console Output Example
 
-This is what the software looks like when it is started:
+This is what Blackbird looks like when it is started:
 
 ```
 Blackbird Bitcoin Arbitrage
+Version 0.0.2
 DISCLAIMER: USE THE SOFTWARE AT YOUR OWN RISK.
 
 [ Targets ]
    Spread to enter: 0.30%
-   Spread to exit:  -0.40%
+   Spread to exit:  0.40%
 
 [ Current balances ]
-   Bitfinex:    949.74 USD    0.000000 BTC
-   OKCoin:      971.67 USD    0.000000 BTC
+   Bitfinex:    1,304.13 USD    0.000000 BTC
+   OKCoin:      1,317.13 USD    0.000236 BTC
+   Bitstamp:    36.10 USD       0.000000 BTC
+   Kraken:      0.00 USD        0.000000 BTC
 
-[ 03/08/2015 14:14:30 ]
-   Bitfinex:    274.57 / 274.72    Last trade: 274.72
-   OKCoin:      273.75 / 274.19    Last trade: 274.00
-   --------------------------------------------------
-   Spread OKCoin/Bitfinex: 0.14% (target 1.10%, min 0.14%, max 0.14%)
+[ Cash exposure ]
+   TEST cash used
+   Value: $20.00
 
-[ 03/08/2015 14:14:35 ]
-   Bitfinex:    274.59 / 274.72    Last trade: 274.72
-   OKCoin:      273.80 / 274.20    Last trade: 274.00
-   --------------------------------------------------
-   Spread OKCoin/Bitfinex: 0.14% (target 1.10%, min 0.14%, max 0.14%)
+[ 05/31/2015 12:31:00 ]
+   Bitfinex:    231.30 / 231.38
+   OKCoin:      231.66 / 231.69
+   Bitstamp:    231.62 / 231.77
+   Kraken:      230.96 / 232.15
+   ----------------------------
+   Bitfinex/Kraken:     -0.18% [target  1.20%, min -0.18%, max -0.18%]
+   OKCoin/Bitfinex:     -0.17% [target  1.10%, min -0.17%, max -0.17%]
+   OKCoin/Kraken:       -0.32% [target  1.20%, min -0.32%, max -0.32%]
+   Bitstamp/Bitfinex:   -0.20% [target  1.20%, min -0.20%, max -0.20%]
+   Bitstamp/Kraken:     -0.35% [target  1.30%, min -0.35%, max -0.35%]
+   Kraken/Bitfinex:     -0.36% [target  1.20%, min -0.36%, max -0.36%]
 
-[ 03/08/2015 14:14:40 ]
-   Bitfinex:    274.59 / 274.72    Last trade: 274.72
-   OKCoin:      273.81 / 274.07    Last trade: 274.00
-   --------------------------------------------------
-   Spread OKCoin/Bitfinex: 0.19% (target 1.10%, min 0.14%, max 0.19%)
-
+[ 05/31/2015 12:31:05 ]
+   Bitfinex:    231.24 / 231.38
+   OKCoin:      231.66 / 231.69
+   Bitstamp:    231.62 / 231.77
+   Kraken:      230.96 / 232.15
+   ----------------------------
+   Bitfinex/Kraken:     -0.18% [target  1.20%, min -0.18%, max -0.18%]
+   OKCoin/Bitfinex:     -0.19% [target  1.10%, min -0.19%, max -0.17%]
+   OKCoin/Kraken:       -0.32% [target  1.20%, min -0.32%, max -0.32%]
+   Bitstamp/Bitfinex:   -0.23% [target  1.20%, min -0.23%, max -0.20%]
+   Bitstamp/Kraken:     -0.35% [target  1.30%, min -0.35%, max -0.35%]
+   Kraken/Bitfinex:     -0.39% [target  1.20%, min -0.39%, max -0.36%]
 ```
 
 ### Arbitrage Parameters
@@ -76,7 +90,7 @@ A smaller spread means more trades will be generated but with less profit each.
 
 ### Code Information
 
-I am not a professional C++ developer so there are parts that are not perfectly coded and you are welcome to help me out. However the arbitrage mechanism works and the system can generate profits.
+I am not a professional developer so there are parts that are not perfectly coded and you are welcome to help me out. However the arbitrage mechanism works and the system can generate profits.
 
 Blackbird uses the base64 functions written by <a href="http://www.adp-gmbh.ch/cpp/common/base64.html" target="_target">René Nyffenegger</a> to encode and decode base64 in C++. Thank you René your code works well with Blackbird.
 
@@ -89,13 +103,13 @@ It is possible to properly stop Blackbird after the next trade has closed. While
 
 #### Note
 
-Please make sure you understand the disclaimer above if you are going to test the program with real money. You can start by testing with a limited amount of money like $5 per exchange. Note that it is never entirely safe to just tell the system to use only $5 per exchange (parameter `CashForTesting`). You also need to only have $5 available on each of your trading accounts so you will be sure than even with a bug with the `CashForTesting` parameter your maximum loss on an exchange won't be greater than $5 no matter what.
+Please make sure you understand the disclaimer above if you are going to test the program with real money. You can start by testing with a limited amount of money like $20 per exchange. Note that it is never entirely safe to just tell the system to use only $20 per exchange (parameter `CashForTesting`). You also need to only have $20 available on each of your trading accounts so you will be sure than even with a bug with the `CashForTesting` parameter your maximum loss on an exchange won't be greater than $20 no matter what.
 
 #### Credentials
 
-You need to have an account on Bitfinex and an account on OKCoin. Then with each account you need to create an API authentication key. This is usually in the _Settings_ section of your exchange accounts.
+You need to have accounts on Bitfinex, OKCoin and Bitstamp. Then with each account you need to create API authentication keys. This is usually in the _Settings_ section of your exchange accounts. In v0.0.2 the Kraken bid/ask information are displayed but the functions to send orders haven't been implemented yet.
 
-The file that contains all the parameters is _config.json_. __NEVER__ share this file as it will contain your credentials!
+The file that contains all the parameters is _config.json_. __Never__ share this file as it will contain your exchange credentials!
 
 First add your credentials to _config.json_:
 
@@ -104,7 +118,10 @@ First add your credentials to _config.json_:
 "BitfinexSecretKey"
 "OKCoinApiKey"
 "OKCoinSecretKey"
-```
+"BitstampClientId"
+"BitstampApiKey"
+"BitstampSecretKey"
+````
 
 #### Strategy parameters
 
@@ -116,16 +133,16 @@ Modify the stategy parameters if needed. These are the ones by default:
 
 #### Risk parameters
 
-If you set `UseFullCash` at `true` then the system will use the minimum cash of your two trading accounts, minus a small percentage defined by `UntouchedCash`.
+If you set `UseFullCash` at `true` then Blackbird will use the minimum cash on the accounts of your two trades, minus a small percentage defined by `UntouchedCash`.
 For example, if you have:
 
 ```json
 "UseFullCash": true,
 "UntouchedCash": 0.01,
-"CashForTesting": 5.00,
+"CashForTesting": 20.00,
 ```
 
-And let's say you have $1,000 on your Bitfinex trading account and $1,100 on your OKCoin trading account. The system will then use $990 on each exchange (i.e. $1,000 - 1%). So in this example your total exposure will be $1,980. Now if you change `UseFullCash` to `false` then the system will use $5 per exchange (total exposure $10).
+And let's say you have $1,000 on your Bitfinex trading account and $1,100 on your OKCoin trading account. The system will then use $990 on each exchange (i.e. $1,000 - 1%). So in this example your total exposure will be $1,980. Now if you change `UseFullCash` to `false` then the system will use $20 per exchange (total exposure $40).
 
 
 ### E-mail parameters (optional)
@@ -168,7 +185,7 @@ Then start the software:
 Alternatively, you may want to start it in the background:
 
 ```
-./blackbird > output.txt 2>&1 &
+./blackbird > output.txt &
 ```
 
 ### Tasks And Issues
@@ -177,9 +194,17 @@ Please check the <a href="https://github.com/butor/blackbird/issues" target="_bl
 
 ### Changelog
 
-##### v0.0.1 - May 2015
+##### v0.0.1 - May 16th, 2015
 
 * First release
+
+#### v0.0.2 - May 30th, 2015
+
+ * Bitstamp exchange added
+ * Kraken exchange added (bid/ask information only, other functions to be implemented)
+ * Improved JSON and cURL exceptions management
+ * Added the milliseconds to the nonce used for exchange authentification
+ * Several minor fixes and improvements
 
 ### Links
 

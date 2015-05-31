@@ -16,19 +16,28 @@
 #include "check_entry_exit.h"
 #include "bitfinex.h"
 #include "okcoin.h"
+#include "bitstamp.h"
+#include "kraken.h"
 #include "send_email.h"
+
+// typedef
+typedef double (*getQuoteType) (CURL *curl, bool isBid);
+typedef double (*getAvailType) (CURL *curl, Parameters params, std::string currency);
+typedef int (*sendOrderType) (CURL *curl, Parameters params, std::string direction, double quantity, double price);
+typedef bool (*isOrderCompleteType) (CURL *curl, Parameters params, int orderId);
+typedef double (*getActivePosType) (CURL *curl, Parameters params);
 
 int main(int argc, char **argv) {
 
   // header information
-  std::cout << "Blackbird Bitcoin Arbitrage\nVersion 0.0.1, May 2015" << std::endl;
+  std::cout << "Blackbird Bitcoin Arbitrage\nVersion 0.0.2" << std::endl;
   std::cout << "DISCLAIMER: USE THE SOFTWARE AT YOUR OWN RISK.\n" << std::endl;
 
   // read the config file (config.json)
   json_error_t error;
   json_t *root = json_load_file("config.json", 0, &error);
   if (!root) {
-     std::cout << "Error with the config file: " << error.text << ".\n" << std::endl;
+     std::cout << "ERROR: config.json incorrect (" << error.text << ")\n" << std::endl;
     return 1;
   }
  
@@ -40,6 +49,18 @@ int main(int argc, char **argv) {
   double untouchedCash = json_real_value(json_object_get(root, "UntouchedCash"));
   double cashForTesting = json_real_value(json_object_get(root, "CashForTesting"));
 
+  if (!useFullCash && cashForTesting < 15.0) {
+    std::cout << "ERROR: Minimum test cash is $15.00.\n" << std::endl;
+    return 1;
+  }
+  
+  // function arrays 
+  getQuoteType getQuote[] = {Bitfinex::getQuote, OkCoin::getQuote, Bitstamp::getQuote, Kraken::getQuote};
+  getAvailType getAvail[] = {Bitfinex::getAvail, OkCoin::getAvail, Bitstamp::getAvail, Kraken::getAvail};
+  sendOrderType sendOrder[] = {Bitfinex::sendOrder, OkCoin::sendOrder, Bitstamp::sendOrder};
+  isOrderCompleteType isOrderComplete[] = {Bitfinex::isOrderComplete, OkCoin::isOrderComplete, Bitstamp::isOrderComplete};
+  getActivePosType getActivePos[] = {Bitfinex::getActivePos, OkCoin::getActivePos, Bitstamp::getActivePos, Kraken::getActivePos};
+
   // thousand separator
   std::locale mylocale("");
   std::cout.imbue(mylocale);
@@ -50,8 +71,10 @@ int main(int argc, char **argv) {
 
   // create a parameters structure
   Parameters params(root);
-  params.addExchange("Bitfinex", 0.0020, true, "https://api.bitfinex.com/v1/ticker/btcusd");
-  params.addExchange("OKCoin", 0.0020, false, "https://www.okcoin.com/api/ticker.do?ok=1");
+  params.addExchange("Bitfinex", 0.0020, true);
+  params.addExchange("OKCoin", 0.0020, false);
+  params.addExchange("Bitstamp", 0.0025, false);
+  params.addExchange("Kraken", 0.0025, true);
 
   // CSV file
   std::string csvFileName;
@@ -74,13 +97,12 @@ int main(int argc, char **argv) {
   res.clear();
   // Vector of Bitcoin
   std::vector<Bitcoin*> btcVec;
-  // create Bitcoin objects:
-  // 0. Bitfinex, 1. OKCoin
-  Bitcoin *a = new Bitcoin(0, params.exchName[0], params.fees[0], params.hasShort[0]);
-  btcVec.push_back(a);
-  Bitcoin *b = new Bitcoin(1, params.exchName[1], params.fees[1], params.hasShort[1]);
-  btcVec.push_back(b);
-  
+
+  // create Bitcoin objects
+  for (unsigned i = 0; i < params.nbExch(); ++i) {
+    btcVec.push_back(new Bitcoin(i, params.exchName[i], params.fees[i], params.hasShort[i]));
+  }
+
   // cURL
   CURL* curl;
   curl_global_init(CURL_GLOBAL_ALL);
@@ -96,11 +118,11 @@ int main(int argc, char **argv) {
   std::vector<double> balanceUsd;
   std::vector<double> balanceBtc;
  
-  balanceUsd.push_back(getBitfinexAvail(curl, params, "usd"));
-  balanceUsd.push_back(getOkCoinAvail(curl, params, "usd"));
-  balanceBtc.push_back(getBitfinexAvail(curl, params, "btc"));
-  balanceBtc.push_back(getOkCoinAvail(curl, params, "btc"));
-  
+  for (unsigned i = 0; i < params.nbExch(); ++i) {
+    balanceUsd.push_back(getAvail[i](curl, params, "usd"));
+    balanceBtc.push_back(getAvail[i](curl, params, "btc"));
+  }
+
   // vectors that contains balances after a completed trade
   std::vector<double> newBalUsd(params.nbExch(), 0.0);
   std::vector<double> newBalBtc(params.nbExch(), 0.0);
@@ -113,9 +135,7 @@ int main(int argc, char **argv) {
 
   std::cout << "[ Cash exposure ]" << std::endl;
   if (useFullCash) {
-    double initCash = *std::min_element(balanceUsd.begin(), balanceUsd.end());
-    initCash -= initCash * untouchedCash;
-    std::cout << "   FULL cash used!\n   Initial value: $" << initCash << std::endl;
+    std::cout << "   FULL cash used!" << std::endl;
   } else {
     std::cout << "   TEST cash used\n   Value: $" << cashForTesting << std::endl;
   }
@@ -130,7 +150,7 @@ int main(int argc, char **argv) {
     timeinfo = localtime(&rawtime);
   }
 
-  // MAIN LOOP
+  // main loop
   if (!params.verbose) {
     std::cout << "Running..." << std::endl;  
   }
@@ -172,43 +192,17 @@ int main(int argc, char **argv) {
     // download the exchanges prices
     for (unsigned e = 0; e < params.nbExch(); ++e) {
 
-      double bid = 0.0;
-      double ask = 0.0;
-      double lastTrade = 0.0;
-
-      json_t *root = getJsonFromUrl(curl, params.tickerUrl[e]);
-   
-      if (!root) {
-        if (params.verbose) {
-          std::cout << "WARNING: Data error on " << params.exchName[e] << std::endl;
-          std::cout << "         Add previous price (" << btcVec[e]->getLastBid() << " / " << btcVec[e]->getLastAsk() << ")" << std::endl;
-        }
-        btcVec[e]->addData(currTime, btcVec[e]->getLastBid(), btcVec[e]->getLastAsk(), 0.0);
+      double bid = getQuote[e](curl, true);
+      double ask = getQuote[e](curl, false);
+      if (params.verbose) {
+        std::cout << "   " << params.exchName[e] << ": \t" << bid << " / " << ask << std::endl;
       }
-      else {
-        // Bitfinex
-        if (e == 0) {
-          bid = atof(json_string_value(json_object_get(root, "bid")));
-          ask = atof(json_string_value(json_object_get(root, "ask")));
-          lastTrade = atof(json_string_value(json_object_get(root, "last_price")));           
-        }
-        // OKCoin
-        else if  (e == 1) {
-          bid = atof(json_string_value(json_object_get(json_object_get(root, "ticker"), "buy")));
-          ask = atof(json_string_value(json_object_get(json_object_get(root, "ticker"), "sell")));
-          lastTrade = atof(json_string_value(json_object_get(json_object_get(root, "ticker"), "last")));         
-        }
-        if (params.verbose) {
-          std::cout << "   " << params.exchName[e] << ": \t" << bid << " / " << ask << "    Last trade: " << lastTrade << std::endl;
-        }
-        btcVec[e]->addData(currTime, bid, ask, 0.0);
-      }
+      btcVec[e]->addData(currTime, bid, ask, 0.0);
       curl_easy_reset(curl);
-      json_decref(root);
     }
     // load data terminated
     if (params.verbose) {
-      std::cout << "   --------------------------------------------------" << std::endl;
+      std::cout << "   ----------------------------" << std::endl;
     }
     // compute entry point
     if (!inMarket) {
@@ -216,16 +210,16 @@ int main(int argc, char **argv) {
         for (unsigned j = 0; j < params.nbExch(); ++j) {
           if (i != j) {
             if (checkEntry(btcVec[i], btcVec[j], res, params)) {
-              // entry opportunity found!
+              // entry opportunity found
               // compute exposure
               res.exposure = std::min(balanceUsd[res.idExchLong], balanceUsd[res.idExchShort]);
-	      if (res.exposure == 0.0) {
-	        std::cout << "\nWARNING: Opportunity found but no cash available. Trade canceled." << std::endl;
-		break;
+              if (res.exposure == 0.0) {
+                std::cout << "WARNING: Opportunity found but no cash available. Trade canceled." << std::endl;
+                break;
               }
-	      if (useFullCash == false && res.exposure <= cashForTesting) {
-	        std::cout << "\nWARNING: Opportunity found but no enough cash. Need more than TEST cash (min. $" << cashForTesting << "). Trade canceled." << std::endl;
-	        break;	
+              if (useFullCash == false && res.exposure <= cashForTesting) {
+                std::cout << "WARNING: Opportunity found but no enough cash. Need more than TEST cash (min. $" << cashForTesting << "). Trade canceled." << std::endl;
+                break;        
               }
               if (useFullCash) {
                 // leave untouchedCash
@@ -234,7 +228,7 @@ int main(int argc, char **argv) {
               else {
                 // use test money
                 res.exposure = cashForTesting;
-	      }
+              }
 
               inMarket = true;
               resultId++;
@@ -242,39 +236,25 @@ int main(int argc, char **argv) {
               res.id = resultId;
               res.entryTime = currTime;
               res.printEntry();
-              res.maxCurrSpread = -1.0;
-              res.minCurrSpread = 1.0;
-              int bitfinexOrderId = 0;
-              int okCoinOrderId = 0;
+              res.maxSpread[res.idExchLong][res.idExchShort] = -1.0;
+              res.minSpread[res.idExchLong][res.idExchShort] = 1.0;
+              int longOrderId = 0;
+              int shortOrderId = 0;
 
-              // send orders
-              if (res.idExchLong == 0) {
-                // Long Bitfinex
-                bitfinexOrderId = sendBitfinexOrder(curl, params, "buy", res.exposure / btcVec[res.idExchLong]->getLastAsk(), btcVec[res.idExchLong]->getLastAsk());
-              }
-              else if (res.idExchLong == 1) {
-                // Long OkCoin
-                okCoinOrderId = sendOkCoinOrder(curl, params, "buy", res.exposure / btcVec[res.idExchLong]->getLastAsk(), btcVec[res.idExchLong]->getLastAsk());
-              }
-              
-              if (res.idExchShort == 0) {
-                // Short Bitfinex
-                bitfinexOrderId = sendBitfinexOrder(curl, params, "sell", res.exposure / btcVec[res.idExchShort]->getLastBid(), btcVec[res.idExchShort]->getLastBid());
-              }
-              else if (res.idExchShort == 1) {
-                // Short OkCoin
-                // To be implemented
-              }
+              // send Long order
+              longOrderId = sendOrder[res.idExchLong](curl, params, "buy", res.exposure / btcVec[res.idExchLong]->getLastAsk(), btcVec[res.idExchLong]->getLastAsk());
+              // send Short order
+              shortOrderId = sendOrder[res.idExchShort](curl, params, "sell", res.exposure / btcVec[res.idExchShort]->getLastBid(), btcVec[res.idExchShort]->getLastBid());
               
               // wait for the orders to be filled
               sleep(3.0);
               std::cout << "Waiting for the two orders to be filled..." << std::endl;
-              while (!isBitfinexOrderComplete(curl, params, bitfinexOrderId) || !isOkCoinOrderComplete(curl, params, okCoinOrderId)) {
+              while (!isOrderComplete[res.idExchLong](curl, params, longOrderId) || !isOrderComplete[res.idExchShort](curl, params, shortOrderId)) {
                 sleep(3.0);
               }
               std::cout << "Done" << std::endl;
-	      bitfinexOrderId = 0;
-	      okCoinOrderId = 0;
+              longOrderId = 0;
+              shortOrderId = 0;
               break;
             }
           }
@@ -291,64 +271,50 @@ int main(int argc, char **argv) {
     else if (inMarket) {
 
       if (checkExit(btcVec[res.idExchLong], btcVec[res.idExchShort], res, params, currTime)) {
-        // exit opportunity found!
+        // exit opportunity found
         res.exitTime = currTime;
         res.printExit();
         // send orders
         // check current exposure
         std::vector<double> btcUsed;
-        btcUsed.push_back(getActiveBitfinexPosition(curl, params));
-        btcUsed.push_back(getActiveOkCoinPosition(curl, params));
-        int bitfinexOrderId = 0;
-	int okCoinOrderId = 0;
-        
-	for (unsigned i = 0; i < params.nbExch(); ++i) {
-          std::cout << std::setprecision(6) << "BTC exposure on " << params.exchName[i] << ": " << btcUsed[i] << std::setprecision(2) << std::endl;
+        for (unsigned i = 0; i < params.nbExch(); ++i) {
+          btcUsed.push_back(getActivePos[i](curl, params));
         }
+        int longOrderId = 0;
+        int shortOrderId = 0;
+        
+        std::cout << std::setprecision(6) << "BTC exposure on " << params.exchName[res.idExchLong] << ": " << btcUsed[res.idExchLong] << std::setprecision(2) << std::endl;
+        std::cout << std::setprecision(6) << "BTC exposure on " << params.exchName[res.idExchShort] << ": " << btcUsed[res.idExchShort] << std::setprecision(2) << std::endl;
         std::cout << std::endl;
         
-        if (res.idExchLong == 0) {
-          // Close Long Bitfinex
-          bitfinexOrderId = sendBitfinexOrder(curl, params, "sell", fabs(btcUsed[res.idExchLong]), btcVec[res.idExchLong]->getLastBid());
-        }
-        else if (res.idExchLong == 1) {
-          // Close Long OkCoin
-          okCoinOrderId = sendOkCoinOrder(curl, params, "sell", fabs(btcUsed[res.idExchLong]), btcVec[res.idExchLong]->getLastBid());
-        }
-        
-        if (res.idExchShort == 0) {
-          // Close Short Bitfinex
-          bitfinexOrderId = sendBitfinexOrder(curl, params, "buy", fabs(btcUsed[res.idExchShort]), btcVec[res.idExchShort]->getLastAsk());
-        }
-        else if (res.idExchShort == 1) {
-          // Close Short OkCoin
-          // To be implemented
-        }
+        // Close Long
+        longOrderId = sendOrder[res.idExchLong](curl, params, "sell", fabs(btcUsed[res.idExchLong]), btcVec[res.idExchLong]->getLastBid());
+        // Close Short
+        shortOrderId = sendOrder[res.idExchShort](curl, params, "buy", fabs(btcUsed[res.idExchShort]), btcVec[res.idExchShort]->getLastAsk());
         
         // wait for the orders to be filled
         sleep(3.0);
-	std::cout << "Waiting for the two orders to be filled..." << std::endl;
-	while (!isBitfinexOrderComplete(curl, params, bitfinexOrderId) || !isOkCoinOrderComplete(curl, params, okCoinOrderId)) {
-	  sleep(3.0);
-	}
-	std::cout << "Done\n" << std::endl;
-        bitfinexOrderId = 0;
-	okCoinOrderId = 0;
+        std::cout << "Waiting for the two orders to be filled..." << std::endl;
+        while (!isOrderComplete[res.idExchLong](curl, params, longOrderId) || !isOrderComplete[res.idExchShort](curl, params, shortOrderId)) {
+          sleep(3.0);
+        }
+        std::cout << "Done\n" << std::endl;
+        longOrderId = 0;
+        shortOrderId = 0;
 
         // market exited
         inMarket = false;
         
         // new balances
-        newBalUsd[0] = getBitfinexAvail(curl, params, "usd");  
-        newBalUsd[1] = getOkCoinAvail(curl, params, "usd");
-        
-        newBalBtc[0] = getBitfinexAvail(curl, params, "btc");
-        newBalBtc[1] = getOkCoinAvail(curl, params, "btc");
+        for (unsigned i = 0; i < params.nbExch(); ++i) {
+          newBalUsd[i] = getAvail[i](curl, params, "usd");
+          newBalBtc[i] = getAvail[i](curl, params, "btc");
+        }
         
         for (unsigned i = 0; i < params.nbExch(); ++i) {
           std::cout << "New balance on " << params.exchName[i] << ":  \t";
           std::cout << newBalUsd[i] << " USD (perf $" << newBalUsd[i] - balanceUsd[i] << "), ";
-	  std::cout << std::setprecision(6) << newBalBtc[i]  << std::setprecision(2) << " BTC" << std::endl;
+          std::cout << std::setprecision(6) << newBalBtc[i]  << std::setprecision(2) << " BTC" << std::endl;
         }
         std::cout << std::endl;
 
@@ -371,9 +337,9 @@ int main(int argc, char **argv) {
         csvFile.flush();
 
         // send email
-	if (params.sendEmail) {
-	  sendEmail(res, params);
-	  std::cout << "Email sent" << std::endl;
+        if (params.sendEmail) {
+          sendEmail(res, params);
+          std::cout << "Email sent" << std::endl;
         }
 
         // delete result information
@@ -407,6 +373,5 @@ int main(int argc, char **argv) {
   // close csv file
   csvFile.close();
   
-
   return 0;
 }

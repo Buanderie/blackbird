@@ -29,7 +29,9 @@ struct Parameters {
   const char *bitfinexSecret;
   const char *okCoinApi;
   const char *okCoinSecret;
-
+  const char *bitstampClientId;
+  const char *bitstampApi;
+  const char *bitstampSecret;
 
   // email
   bool sendEmail;
@@ -43,7 +45,7 @@ struct Parameters {
   Parameters(json_t *root);
 
   // adds a new exchange
-  void addExchange(std::string n, double f, bool h, std::string t);
+  void addExchange(std::string n, double f, bool h);
 
   // returns the number of exchange analyzed
   unsigned nbExch() const;  

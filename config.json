@@ -6,7 +6,7 @@
 
   "UseFullCash": false,
   "UntouchedCash": 0.01, 
-  "CashForTesting": 5.00,
+  "CashForTesting": 20.00,
   
   "DebugMaxIteration": 3200000,
   "Verbose": true,
@@ -22,5 +22,12 @@
   "BitfinexKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 
   "OkCoinApiKey": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-  "OkCoinSecretKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  "OkCoinSecretKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+
+  "BitstampClientId": "XXXXXX",
+  "BitstampApiKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "BitstampSecretKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+
+  "KrakenApiKey": "",
+  "KrakenSecretKey": ""
 }

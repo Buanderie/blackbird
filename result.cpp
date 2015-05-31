@@ -80,8 +80,14 @@ void Result::clear() {
   priceShortOut = 0.0;
   spreadIn = 0.0;
   spreadOut = 0.0;
-  maxCurrSpread = -1.0;
-  minCurrSpread = 1.0;
   befBalUsd = 0.0;
   aftBalUsd = 0.0;
+
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      minSpread[i][j] = 1.0;
+      maxSpread[i][j] = -1.0;
+    }
+  }
+
 }

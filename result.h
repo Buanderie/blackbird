@@ -25,8 +25,10 @@ struct Result {
   double priceShortOut;
   double spreadIn;
   double spreadOut;
-  double maxCurrSpread;
-  double minCurrSpread;
+
+  double minSpread[8][8]; // FIXME size
+  double maxSpread[8][8]; // FIXME size
+
   double befBalUsd;
   double aftBalUsd;
   

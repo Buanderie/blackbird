@@ -17,6 +17,9 @@ Parameters::Parameters(json_t *root) {
   bitfinexSecret = json_string_value(json_object_get(root, "BitfinexKey"));
   okCoinApi = json_string_value(json_object_get(root, "OkCoinApiKey"));
   okCoinSecret = json_string_value(json_object_get(root, "OkCoinSecretKey"));
+  bitstampClientId = json_string_value(json_object_get(root, "BitstampClientId"));
+  bitstampApi = json_string_value(json_object_get(root, "BitstampApiKey"));
+  bitstampSecret = json_string_value(json_object_get(root, "BitstampSecretKey"));
 
   // email
   sendEmail = json_boolean_value(json_object_get(root, "SendEmail"));
@@ -29,11 +32,10 @@ Parameters::Parameters(json_t *root) {
 
 
 // add an exchange
-void Parameters::addExchange(std::string n, double f, bool h, std::string t) {
+void Parameters::addExchange(std::string n, double f, bool h) {
   exchName.push_back(n);
   fees.push_back(f);
   hasShort.push_back(h);
-  tickerUrl.push_back(t);
 }
 
 

@@ -1,4 +1,3 @@
-
 #include "send_email.h"
 #include "time_fun.h"
 #include <stdlib.h>
@@ -8,12 +7,11 @@
 #include <iomanip>
 #include <unistd.h>
 
-
 void sendEmail(Result res, Parameters params) {
   
-  char tdStyle[] =         "font-family:Georgia;font-size:12px;border-color:#A1A1A1;border-width:1px;border-style:solid;padding:2px;";
-  char captionStyle[] =    "font-family:Georgia;font-size:14px;font-weight:normal;color:#0021BF;padding-bottom:6px;text-align:left;";
-  char tableTitleStyle[] = "font-family:Georgia;font-variant:small-caps;font-size:14px;text-align:center;border-color:#A1A1A1;border-width:1px;border-style:solid;background-color:#EAEAEA;";
+  char tdStyle[] =         "font-family:Georgia;font-size:11px;border-color:#A1A1A1;border-width:1px;border-style:solid;padding:2px;";
+  char captionStyle[] =    "font-family:Georgia;font-size:13px;font-weight:normal;color:#0021BF;padding-bottom:6px;text-align:left;";
+  char tableTitleStyle[] = "font-family:Georgia;font-variant:small-caps;font-size:13px;text-align:center;border-color:#A1A1A1;border-width:1px;border-style:solid;background-color:#EAEAEA;";
   
   std::ostringstream oss;
   oss.precision(2);
@@ -34,13 +32,13 @@ void sendEmail(Result res, Parameters params) {
   oss << "    <table style=\\\"border-width:0px;border-collapse:collapse;text-align:center;\\\">";
   oss << "      <caption style=\\\"" << captionStyle << "\\\">Blackbird Bitcoin Arbitrage - Trade " << res.id << "</caption>";    
   oss << "      <tr style=\\\"" << tableTitleStyle << "\\\">";
-  oss << "        <td style=\\\"" << tdStyle << "width:140px;\\\">Entry Date</td>";
-  oss << "        <td style=\\\"" << tdStyle << "width:140px;\\\">Exit Date</td>";
-  oss << "        <td style=\\\"" << tdStyle << "width:85px;\\\">Long</td>";
-  oss << "        <td style=\\\"" << tdStyle << "width:85px;\\\">Short</td>";
-  oss << "        <td style=\\\"" << tdStyle << "width:85px;\\\">Exposure</td>";
-  oss << "        <td style=\\\"" << tdStyle << "width:85px;\\\">Profit</td>";
-  oss << "        <td style=\\\"" << tdStyle << "width:85px;\\\">Return</td>";
+  oss << "        <td style=\\\"" << tdStyle << "width:120px;\\\">Entry Date</td>";
+  oss << "        <td style=\\\"" << tdStyle << "width:120px;\\\">Exit Date</td>";
+  oss << "        <td style=\\\"" << tdStyle << "width:70px;\\\">Long</td>";
+  oss << "        <td style=\\\"" << tdStyle << "width:70px;\\\">Short</td>";
+  oss << "        <td style=\\\"" << tdStyle << "width:70px;\\\">Exposure</td>";
+  oss << "        <td style=\\\"" << tdStyle << "width:70px;\\\">Profit</td>";
+  oss << "        <td style=\\\"" << tdStyle << "width:70px;\\\">Return</td>";
   oss << "      </tr>";
   oss << "      <tr>";
   oss << "        <td style=\\\"" << tdStyle << "\\\">" << printDateTime(res.entryTime) << "</td>";

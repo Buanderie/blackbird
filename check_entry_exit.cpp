@@ -1,10 +1,26 @@
+#include <sstream> 
 #include <stdlib.h>
+#include <iomanip>
 #include "check_entry_exit.h"
+
+std::string percToStr(double perc) {
+  
+  std::ostringstream s;
+  if (perc < 0.0) {
+    s << std::fixed << std::setprecision(2) <<  perc * 100.0 << "%";
+  } else {
+    s << " " << std::fixed << std::setprecision(2) << perc * 100.0 << "%";
+  }
+  return s.str();
+}
+
 
 bool checkEntry(Bitcoin *btcLong, Bitcoin *btcShort, Result &res, Parameters params) {
 
   double priceLong;
   double priceShort;
+  int longId = btcLong->getId();
+  int shortId = btcShort->getId();
   
   // compute limit (fees + spreadEntry)
   double limit = 2 * btcLong->getFees() + 2 * btcShort->getFees() + params.spreadEntry;
@@ -18,21 +34,22 @@ bool checkEntry(Bitcoin *btcLong, Bitcoin *btcShort, Result &res, Parameters par
     priceShort = btcShort->getLastBid();
     res.spreadIn = (priceShort - priceLong) / priceLong;
 
-    // maxCurrSpread and minCurrSpread
-    if (res.spreadIn > res.maxCurrSpread) {
-      res.maxCurrSpread = res.spreadIn;
+    // maxSpread and minSpread
+    if (res.spreadIn > res.maxSpread[longId][shortId]) {
+      res.maxSpread[longId][shortId] = res.spreadIn;
     }
-    if (res.spreadIn < res.minCurrSpread) {
-      res.minCurrSpread = res.spreadIn;
+    if (res.spreadIn < res.minSpread[longId][shortId]) {
+      res.minSpread[longId][shortId] = res.spreadIn;
     }
     if (params.verbose) {
-      std::cout << "   Spread " << btcLong->getExchName() << "/" << btcShort->getExchName() << ": " << res.spreadIn * 100.0 << "%";
-      std::cout << " (target " << limit * 100.0 << "%, min " << res.minCurrSpread * 100.0 << "%, max " << res.maxCurrSpread * 100.0 << "%)" << std::endl;
+      std::cout << "   " << btcLong->getExchName() << "/" << btcShort->getExchName() << ":\t" << percToStr(res.spreadIn);
+      std::cout << " [target " << percToStr(limit) << ", min " << percToStr(res.minSpread[longId][shortId]) << ", max " << percToStr(res.maxSpread[longId][shortId]) << "]" << std::endl;
     }
-    if (res.spreadIn >= limit && priceLong > 0.0 && priceShort > 0.0) {
+    // TODO Kraken (id 3) is not ready to be traded on
+    if (res.spreadIn >= limit && priceLong > 0.0 && priceShort > 0.0 && longId != 3 && shortId != 3) {
       // opportunity found
-      res.idExchLong = btcLong->getId();
-      res.idExchShort = btcShort->getId();
+      res.idExchLong = longId;
+      res.idExchShort = shortId;
       res.feesLong = btcLong->getFees();
       res.feesShort = btcShort->getFees();
       res.exchNameLong = btcLong->getExchName();
@@ -51,6 +68,8 @@ bool checkExit(Bitcoin *btcLong, Bitcoin *btcShort, Result &res, Parameters para
 
   double priceLong;
   double priceShort;
+  int longId = btcLong->getId();
+  int shortId = btcShort->getId();
 
   // close btcLong:  sell looking to match bid
   // close btcShort: buy looking to match ask
@@ -58,19 +77,20 @@ bool checkExit(Bitcoin *btcLong, Bitcoin *btcShort, Result &res, Parameters para
   priceShort = btcShort->getLastAsk();
   res.spreadOut = (priceShort - priceLong) / priceLong;
   
-  // maxCurrSpread and minCurrSpread
-  if (res.spreadOut > res.maxCurrSpread) {
-    res.maxCurrSpread = res.spreadOut;
+  // maxSpread and minSpread
+  if (res.spreadOut > res.maxSpread[longId][shortId]) {
+    res.maxSpread[longId][shortId] = res.spreadOut;
   }
-  if (res.spreadOut < res.minCurrSpread) {
-    res.minCurrSpread = res.spreadOut;
+  if (res.spreadOut < res.minSpread[longId][shortId]) {
+    res.minSpread[longId][shortId] = res.spreadOut;
   }
 
   if (params.verbose) {
-    std::cout << "   Spread " << btcLong->getExchName() << "/" << btcShort->getExchName() << ": " << res.spreadOut * 100.0 << "%";
-    std::cout << " (target " << params.spreadExit * 100.0 << "%, min " << res.minCurrSpread * 100.0 << "%, max " << res.maxCurrSpread * 100.0 << "%)" << std::endl;
+    std::cout << "   " << btcLong->getExchName() << "/" << btcShort->getExchName() << ":\t" << percToStr(res.spreadOut);
+    std::cout << " [target " << percToStr(params.spreadExit) << ", min " << percToStr(res.minSpread[longId][shortId]) << ", max " << percToStr(res.maxSpread[longId][shortId]) << "]" << std::endl;
   }
-  
+
+
   // check length
   if (period - res.entryTime >= params.maxLength) {
     res.priceLongOut  = priceLong;
