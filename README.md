@@ -204,6 +204,7 @@ Please check the <a href="https://github.com/butor/blackbird/issues" target="_bl
  * Kraken exchange added (bid/ask information only, other functions to be implemented)
  * Improved JSON and cURL exceptions management
  * Added the milliseconds to the nonce used for exchange authentification
+ * JSON memory leak fixed
  * Several minor fixes and improvements
 
 ### Links
