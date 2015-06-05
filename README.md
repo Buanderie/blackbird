@@ -76,8 +76,8 @@ DISCLAIMER: USE THE SOFTWARE AT YOUR OWN RISK.
 
 The two parameters used to control the arbitrage are `SpreadEntry` and `SpreadExit`.
 
-* `SpreadEntry` is the limit above which a long/short trade is triggered.
-* `SpreadExit` is the limit below which the long/short trade is closed.
+* `SpreadEntry` is the limit above which a long/short trade is triggered
+* `SpreadExit` is the limit below which the long/short trade is closed
 
 `SpreadEntry` is actually the limit _after_ the exchange fees which means that `SpreadEntry` represents the net profit. If two exchanges have a 0.20% fees for every trade it means that for a full trade cycle we will have:
 
