@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   json_error_t error;
   json_t *root = json_load_file("config.json", 0, &error);
   if (!root) {
-     std::cout << "ERROR: config.json incorrect (" << error.text << ")\n" << std::endl;
+    std::cout << "ERROR: config.json incorrect (" << error.text << ")\n" << std::endl;
     return 1;
   }
  
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
   std::cout << "[ Targets ]" << std::endl;
   std::cout << "   Spread to enter: " << params.spreadEntry * 100.0 << "%" << std::endl;
-  std::cout << "   Spread to exit:  " << params.spreadExit * 100.0  << "%" << std::endl;
+  std::cout << "   Spread to exit: " << params.spreadExit * 100.0  << "%" << std::endl;
   std::cout << std::endl;
 
   // store current balances
@@ -156,7 +156,8 @@ int main(int argc, char **argv) {
   }
 
   unsigned currIteration = 0;
-  while (currIteration < debugMaxIteration) {
+  bool stillRunning = true;
+  while (stillRunning) {
 
     time_t currTime = mktime(timeinfo);
     time(&rawtime);
@@ -349,12 +350,7 @@ int main(int argc, char **argv) {
         std::ifstream infile("stop_after_exit");
         if (infile.good()) {
           std::cout << "Exit after last trade (file stop_after_exit found)" << std::endl;
-          // close cURL
-          curl_easy_cleanup(curl);
-          curl_global_cleanup();
-          // close csv file
-          csvFile.close(); 
-          return 0;
+          stillRunning = false;
         }
       }
       if (params.verbose) {
@@ -362,11 +358,18 @@ int main(int argc, char **argv) {
       }
     }
     // activities for this iteration terminated
-    // update the timeinfo structure
     timeinfo->tm_sec = timeinfo->tm_sec + gapSec;
     currIteration++;
+    if (currIteration >= debugMaxIteration) {
+      std::cout << "Max iteration reached (" << debugMaxIteration << ")" <<std::endl;
+      stillRunning = false;
+    }
   }
-  std::cout << "Max iteration reached (" << debugMaxIteration << ")" <<std::endl;
+  // delete Bitcoin objects
+  for (unsigned i = 0; i < params.nbExch(); ++i) {
+    delete(btcVec[i]);
+  }
+  json_decref(root);
   // close cURL
   curl_easy_cleanup(curl);
   curl_global_cleanup();

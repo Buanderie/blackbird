@@ -17,17 +17,21 @@ namespace Bitstamp {
 
 double getQuote(CURL *curl, bool isBid) {
 
+  double quote;
   json_t *root = getJsonFromUrl(curl, "https://www.bitstamp.net/api/ticker/", "");
   if (isBid) {
-    return atof(json_string_value(json_object_get(root, "bid")));
+    quote = atof(json_string_value(json_object_get(root, "bid")));
   } else {
-    return atof(json_string_value(json_object_get(root, "ask")));
+    quote = atof(json_string_value(json_object_get(root, "ask")));
   }
+  json_decref(root);
+  return quote;
 }
 
 
 double getAvail(CURL *curl, Parameters params, std::string currency) {
 
+  double availability = 0.0;
   json_t *root = authRequest(curl, params, "https://www.bitstamp.net/api/balance/", "");
   while (json_object_get(root, "message") != NULL) {
     std::cout << "<Bitstamp> Error with JSON in getAvail: " << json_dumps(root, 0) << ". Retrying..." << std::endl;
@@ -35,21 +39,20 @@ double getAvail(CURL *curl, Parameters params, std::string currency) {
   } 
 
   if (currency.compare("btc") == 0) {
-    return atof(json_string_value(json_object_get(root, "btc_balance")));    
+    availability = atof(json_string_value(json_object_get(root, "btc_balance")));    
   }
   else if (currency.compare("usd") == 0) {
-    return atof(json_string_value(json_object_get(root, "usd_balance"))); 
+    availability = atof(json_string_value(json_object_get(root, "usd_balance"))); 
   }
-  else {
-    return 0.0;
-  }
+  json_decref(root);
+  return availability;
 }
 
 
 int sendOrder(CURL *curl, Parameters params, std::string direction, double quantity, double price) {
 
   // define limit price to be sure to be executed
-  double limPrice = 0;
+  double limPrice;
   if (direction.compare("buy") == 0) {
     limPrice = getLimitPrice(curl, quantity, false);
   }
@@ -73,6 +76,7 @@ int sendOrder(CURL *curl, Parameters params, std::string direction, double quant
     std::cout << "<Bitstamp> Order ID = 0. Message: " << json_dumps(root, 0) << std::endl;
   }
   std::cout << "<Bitstamp> Done (order ID: " << orderId << ")\n" << std::endl;
+  json_decref(root);
   return orderId;
 }
 
@@ -87,6 +91,7 @@ bool isOrderComplete(CURL *curl, Parameters params, int orderId) {
   std::string options = oss.str();
   json_t *root = authRequest(curl, params, "https://www.bitstamp.net/api/order_status/", options);
   std::string status = json_string_value(json_object_get(root, "status"));
+  json_decref(root);
   if (status.compare("Finished") == 0) {
     return true;
   } else {
@@ -102,6 +107,7 @@ double getActivePos(CURL *curl, Parameters params) {
 
 double getLimitPrice(CURL *curl, double volume, bool isBid) {
 
+  double limPrice;
   json_t *root;
   if (isBid) {
     root = json_object_get(getJsonFromUrl(curl, "https://www.bitstamp.net/api/order_book/", ""), "bids");
@@ -118,7 +124,9 @@ double getLimitPrice(CURL *curl, double volume, bool isBid) {
     i++;
   }
   // return the second next offer
-  return atof(json_string_value(json_array_get(json_array_get(root, i+1), 0)));
+  limPrice = atof(json_string_value(json_array_get(json_array_get(root, i+1), 0)));
+  json_decref(root);
+  return limPrice;
 }
 
 
@@ -151,7 +159,7 @@ json_t* authRequest(CURL *curl, Parameters params, std::string url, std::string 
 
   // cURL request
   CURLcode resCurl;
-  curl = curl_easy_init();
+//  curl = curl_easy_init();
   if (curl) {
     //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl, CURLOPT_POST,1L);

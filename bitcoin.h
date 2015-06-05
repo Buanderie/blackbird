@@ -24,7 +24,10 @@ class Bitcoin {
     // constructors
     Bitcoin(unsigned id, std::string n, double f, bool h);
     Bitcoin(unsigned id, std::string n, double f, bool h, std::vector<time_t> *dt, std::vector<double> *b, std::vector<double> *a, std::vector<double> *v);
-    
+  
+    // destructor
+    ~Bitcoin();
+
     void addData(time_t d, double b, double a, double v);
     void removeLastData();
     

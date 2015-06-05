@@ -33,7 +33,7 @@ DISCLAIMER: USE THE SOFTWARE AT YOUR OWN RISK.
 
 [ Targets ]
    Spread to enter: 0.30%
-   Spread to exit:  0.40%
+   Spread to exit: -0.40%
 
 [ Current balances ]
    Bitfinex:    1,304.13 USD    0.000000 BTC

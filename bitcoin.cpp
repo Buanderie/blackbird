@@ -29,6 +29,14 @@ Bitcoin::Bitcoin(unsigned i, std::string n, double f, bool h, std::vector<time_t
 }
 
 
+Bitcoin::~Bitcoin() {
+  delete(datetime);
+  delete(bid);
+  delete(ask);
+  delete(volume);
+}
+
+
 void Bitcoin::addData(time_t d, double b, double a, double v) {
   datetime->push_back(d);
   bid->push_back(b);
