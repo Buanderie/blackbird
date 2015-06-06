@@ -23,11 +23,18 @@ double getQuote(CURL *curl, bool isBid) {
 
 
 double getAvail(CURL *curl, Parameters params, std::string currency) {
+  // TODO
   return 0.0;
 }
 
   
 double getActivePos(CURL *curl, Parameters params) {
+  // TODO
+  return 0.0;
+}
+
+double getLimitPrice(CURL *curl, double volume, bool isBid) {
+  // TODO
   return 0.0;
 }
 

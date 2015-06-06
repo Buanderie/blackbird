@@ -16,5 +16,8 @@ namespace Kraken {
   // get the bitcoin exposition
   double getActivePos(CURL *curl, Parameters params);
 
+  // get the limit price according to the requested volume
+  double getLimitPrice(CURL *curl, double volume, bool isBid);
+
 }
 #endif
